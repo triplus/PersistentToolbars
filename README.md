@@ -9,15 +9,15 @@ PersistentToolbars can be installed as FreeCAD module. Install path for FreeCAD 
 
 Linux:
 
-`/home/user/.FreeCAD/Mod/PieMenu/InitGui.py`
+`/home/user/.FreeCAD/Mod/PersistentToolbars/InitGui.py`
 
 macOS:
 
-`/Users/user_name/Library/Preferences/FreeCAD/Mod/PieMenu/InitGui.py`
+`/Users/user_name/Library/Preferences/FreeCAD/Mod/PersistentToolbars/InitGui.py`
 
 Windows:
 
-`C:\Users\user_name\AppData\Roaming\FreeCAD\Mod\PieMenu\InitGui.py`
+`C:\Users\user_name\AppData\Roaming\FreeCAD\Mod\PersistentToolbars\InitGui.py`
 
 ### Usage:
 
