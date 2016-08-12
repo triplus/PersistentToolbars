@@ -21,4 +21,4 @@ Windows:
 
 ### Usage:
 
-Once installed no additional configuration is needed. Toolbar position changes made in different workbenches should be restored when FreeCAD is restated.
+Once installed no additional configuration is needed. Toolbar position changes made in different workbenches should be restored when FreeCAD is restarted.
