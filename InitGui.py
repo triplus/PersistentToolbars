@@ -286,6 +286,6 @@ def persistentToolbars():
                 i.visibilityChanged.connect(onVisibilityChanged)
 
     mw = Gui.getMainWindow()
-    mw.workbenchActivated.connect(onWorkbencActivated)
+    mw.workbenchActivated.connect(onStart)
 
 persistentToolbars()
