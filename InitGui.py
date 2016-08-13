@@ -27,6 +27,9 @@ def persistentToolbars():
     from PySide import QtCore
     from PySide import QtGui
 
+    global startToolbar
+    startToolbar = False
+    startToolbars = []
     conectedToolbars = []
 
     paramGet = App.ParamGet("User parameter:BaseApp/PersistentToolbars")
@@ -242,6 +245,45 @@ def persistentToolbars():
             onRestore()
         else:
             pass
+
+    def onVisibilityChanged(i):
+        """
+        When (first) toolbar is made visible restore toolbar position
+        in (default) workbench. After restore toolbars when workbench
+        is activated.
+        """
+        global startToolbar
+
+        if i:
+            for a in startToolbars:
+                if a.isVisible():
+                    a.visibilityChanged.disconnect(onVisibilityChanged)
+                    startToolbars.remove(a)
+                else:
+                    pass
+
+            onWorkbencActivated()
+
+            if startToolbar:
+                pass
+            else:
+                mw.workbenchActivated.disconnect(onStart)
+                mw.workbenchActivated.connect(onWorkbencActivated)
+
+            startToolbar = True
+        else:
+            pass
+
+    def onStart():
+        """
+        Detect default workbench toolbars visibility change.
+        """
+        for i in mw.findChildren(QtGui.QToolBar):
+            if i in startToolbars:
+                pass
+            else:
+                startToolbars.append(i)
+                i.visibilityChanged.connect(onVisibilityChanged)
 
     mw = Gui.getMainWindow()
     mw.workbenchActivated.connect(onWorkbencActivated)
