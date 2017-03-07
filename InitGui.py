@@ -1,5 +1,5 @@
-# Persistent toolbars support for FreeCAD
-# Copyright (C) 2016  triplus @ FreeCAD
+# Persistent toolbars for FreeCAD
+# Copyright (C) 2016, 2017  triplus @ FreeCAD
 #
 #
 # This library is free software; you can redistribute it and/or
@@ -16,31 +16,29 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 
+"""Persistent toolbars for FreeCAD."""
+
 
 def persistentToolbars():
-    """
-    Persistent toolbars support for FreeCAD.
-    """
+    """Persistent toolbars for FreeCAD."""
+
     import operator
     import FreeCAD as App
     import FreeCADGui as Gui
     from PySide import QtCore
     from PySide import QtGui
+    import PersistentToolbarsPath
 
-    global startToolbar
-    startToolbar = False
-    startToolbars = []
     conectedToolbars = []
-
-    paramGet = App.ParamGet("User parameter:BaseApp/PersistentToolbars")
+    mw = Gui.getMainWindow()
+    t = PersistentToolbarsPath.timer()
 
     def pythonToolbars():
-        """
-        Manage Python based toolbars in Arch and Draft workbench.
-        """
-        active = Gui.activeWorkbench().MenuText
+        """Manage Python based toolbars in Arch and Draft workbench."""
 
-        if active == "Draft" or active == "Arch":
+        active = Gui.activeWorkbench().__class__.__name__
+
+        if active == "DraftWorkbench" or active == "ArchWorkbench":
             if hasattr(Gui, "draftToolBar"):
                 Gui.draftToolBar.Activated()
             if hasattr(Gui, "Snapper"):
@@ -48,52 +46,112 @@ def persistentToolbars():
         else:
             pass
 
-    def onDefault():
-        """
-        Default sorting for toolbars.
-        """
-        toolbars = {}
+    def isConnected(i):
+        """Connect toolbar to onSave function."""
 
-        for i in mw.findChildren(QtGui.QToolBar):
+        if i not in conectedToolbars:
+            conectedToolbars.append(i)
+            i.topLevelChanged.connect(onSave)
+        else:
+            pass
+
+    def onRestore(active):
+        """Restore current workbench toolbars position."""
+
+        toolbars = {}
+        tb = mw.findChildren(QtGui.QToolBar)
+        p = App.ParamGet("User parameter:BaseApp/PersistentToolbars")
+
+        for i in tb:
 
             isConnected(i)
 
-            if i.objectName() and i.isVisible() and not i.isFloating():
+            if i.objectName() and not i.isFloating():
                 toolbars[i.objectName()] = i
             else:
                 pass
 
-        sort = ["Workbench",
-                "File",
-                "Macro",
-                "True",
-                "View"]
+        if p.GetGroup(active).GetBool("Saved"):
 
-        for i in sort:
-            if i == "True":
-                mw.addToolBarBreak(QtCore.Qt.TopToolBarArea)
-            elif i in toolbars:
-                mw.addToolBar(QtCore.Qt.TopToolBarArea, toolbars[i])
-                del toolbars[i]
-            else:
-                pass
+            group = p.GetGroup(active)
 
-        for i in toolbars:
-            mw.addToolBar(QtCore.Qt.TopToolBarArea, toolbars[i])
+            topRestore = group.GetString("Top").split(",")
+            leftRestore = group.GetString("Left").split(",")
+            rightRestore = group.GetString("Right").split(",")
+            bottomRestore = group.GetString("Bottom").split(",")
+
+            # Reduce flickering.
+            for i in toolbars:
+                if (i not in topRestore and
+                        i not in leftRestore and
+                        i not in rightRestore and
+                        i not in bottomRestore):
+
+                    area = mw.toolBarArea(toolbars[i])
+
+                    if area == QtCore.Qt.ToolBarArea.LeftToolBarArea:
+                        leftRestore.append(i)
+                    elif area == QtCore.Qt.ToolBarArea.RightToolBarArea:
+                        rightRestore.append(i)
+                    elif area == QtCore.Qt.ToolBarArea.BottomToolBarArea:
+                        bottomRestore.append(i)
+                    else:
+                        topRestore.append(i)
+                else:
+                    pass
+
+            for i in topRestore:
+                if i == "Break":
+                    mw.addToolBarBreak(QtCore.Qt.TopToolBarArea)
+                elif i in toolbars:
+                    mw.addToolBar(QtCore.Qt.TopToolBarArea, toolbars[i])
+                    del toolbars[i]
+                else:
+                    pass
+
+            for i in leftRestore:
+                if i == "Break":
+                    mw.addToolBarBreak(QtCore.Qt.LeftToolBarArea)
+                elif i in toolbars:
+                    mw.addToolBar(QtCore.Qt.LeftToolBarArea, toolbars[i])
+                    del toolbars[i]
+                else:
+                    pass
+
+            for i in rightRestore:
+                if i == "Break":
+                    mw.addToolBarBreak(QtCore.Qt.RightToolBarArea)
+                elif i in toolbars:
+                    mw.addToolBar(QtCore.Qt.RightToolBarArea, toolbars[i])
+                    del toolbars[i]
+                else:
+                    pass
+
+            for i in bottomRestore:
+                if i == "Break":
+                    mw.addToolBarBreak(QtCore.Qt.BottomToolBarArea)
+                elif i in toolbars:
+                    mw.addToolBar(QtCore.Qt.BottomToolBarArea, toolbars[i])
+                    del toolbars[i]
+                else:
+                    pass
+        else:
+            pass
 
     def onSave():
-        """
-        Save current workbench toolbars position.
-        """
-        active = Gui.activeWorkbench().MenuText
-        group = paramGet.GetGroup(active)
+        """Save current workbench toolbars position."""
+
+        tb = mw.findChildren(QtGui.QToolBar)
+        active = Gui.activeWorkbench().__class__.__name__
+        p = App.ParamGet("User parameter:BaseApp/PersistentToolbars")
+        group = p.GetGroup(active)
 
         top = []
         left = []
         right = []
         bottom = []
 
-        for i in mw.findChildren(QtGui.QToolBar):
+        for i in tb:
             if i.objectName() and i.isVisible() and not i.isFloating():
 
                 area = mw.toolBarArea(i)
@@ -101,7 +159,7 @@ def persistentToolbars():
                 x = i.geometry().x()
                 y = i.geometry().y()
                 b = mw.toolBarBreak(i)
-                n = i.objectName().encode("UTF-8")
+                n = i.objectName()
 
                 if area == QtCore.Qt.ToolBarArea.TopToolBarArea:
                     top.append([x, y, b, n])
@@ -127,165 +185,59 @@ def persistentToolbars():
         bottomSave = []
 
         for i in top:
-            if i[2]:
-                topSave.append("True")
+            if i[2] is True:
+                topSave.append("Break")
                 topSave.append(i[3])
             else:
                 topSave.append(i[3])
 
         for i in left:
-            if i[2]:
-                leftSave.append("True")
+            if i[2] is True:
+                leftSave.append("Break")
                 leftSave.append(i[3])
             else:
                 leftSave.append(i[3])
 
         for i in right:
-            if i[2]:
-                rightSave.append("True")
+            if i[2] is True:
+                rightSave.append("Break")
                 rightSave.append(i[3])
             else:
                 rightSave.append(i[3])
 
         for i in bottom:
-            if i[2]:
-                bottomSave.append("True")
+            if i[2] is True:
+                bottomSave.append("Break")
                 bottomSave.append(i[3])
             else:
                 bottomSave.append(i[3])
 
         group.SetBool("Saved", 1)
-        group.SetString("Top", ".,.".join(topSave))
-        group.SetString("Left", ".,.".join(leftSave))
-        group.SetString("Right", ".,.".join(rightSave))
-        group.SetString("Bottom", ".,.".join(bottomSave))
+        group.SetString("Top", ",".join(topSave))
+        group.SetString("Left", ",".join(leftSave))
+        group.SetString("Right", ",".join(rightSave))
+        group.SetString("Bottom", ",".join(bottomSave))
 
-    def isConnected(i):
-        """
-        Connect toolbar (if not already connected) to onSave function.
-        """
-        if i.objectName():
-            if i.objectName() in conectedToolbars:
-                pass
-            else:
-                conectedToolbars.append(i.objectName())
-                i.topLevelChanged.connect(onSave)
-        else:
-            pass
+    def onWorkbenchActivated():
+        """When workbench gets activated restore toolbar position."""
 
-    def onRestore():
-        """
-        Restore current workbench toolbars position.
-        """
-        active = Gui.activeWorkbench().MenuText
-        group = paramGet.GetGroup(active)
-
-        toolbars = {}
-
-        for i in mw.findChildren(QtGui.QToolBar):
-
-            isConnected(i)
-
-            if i.objectName() and i.isVisible() and not i.isFloating():
-                toolbars[i.objectName().encode("UTF-8")] = i
-            else:
-                pass
-
-        if group.GetBool("Saved"):
-            topRestore = group.GetString("Top").split(".,.")
-            leftRestore = group.GetString("Left").split(".,.")
-            rightRestore = group.GetString("Right").split(".,.")
-            bottomRestore = group.GetString("Bottom").split(".,.")
-
-            for i in topRestore:
-                if i == "True":
-                    mw.addToolBarBreak(QtCore.Qt.TopToolBarArea)
-                elif i in toolbars:
-                    mw.addToolBar(QtCore.Qt.TopToolBarArea, toolbars[i])
-                else:
-                    pass
-
-            for i in leftRestore:
-                if i == "True":
-                    mw.addToolBarBreak(QtCore.Qt.LeftToolBarArea)
-                elif i in toolbars:
-                    mw.addToolBar(QtCore.Qt.LeftToolBarArea, toolbars[i])
-                else:
-                    pass
-
-            for i in rightRestore:
-                if i == "True":
-                    mw.addToolBarBreak(QtCore.Qt.RightToolBarArea)
-                elif i in toolbars:
-                    mw.addToolBar(QtCore.Qt.RightToolBarArea, toolbars[i])
-                else:
-                    pass
-
-            for i in bottomRestore:
-                if i == "True":
-                    mw.addToolBarBreak(QtCore.Qt.BottomToolBarArea)
-                elif i in toolbars:
-                    mw.addToolBar(QtCore.Qt.BottomToolBarArea, toolbars[i])
-                else:
-                    pass
-        else:
-            onDefault()
-
-    def onWorkbencActivated():
-        """
-        When workbench gets activated restore toolbar position.
-        """
-        try:
-            active = Gui.activeWorkbench().MenuText
-        except AttributeError:
-            active = False
+        active = Gui.activeWorkbench().__class__.__name__
 
         if active:
             pythonToolbars()
-            onRestore()
-        else:
-            pass
-
-    def onVisibilityChanged(i):
-        """
-        When (first) toolbar is made visible restore toolbar position
-        in (default) workbench. After restore toolbars when workbench
-        is activated.
-        """
-        global startToolbar
-
-        if i:
-            for a in startToolbars:
-                if a.isVisible():
-                    a.visibilityChanged.disconnect(onVisibilityChanged)
-                    startToolbars.remove(a)
-                else:
-                    pass
-
-            onWorkbencActivated()
-
-            if startToolbar:
-                pass
-            else:
-                mw.workbenchActivated.disconnect(onStart)
-                mw.workbenchActivated.connect(onWorkbencActivated)
-
-            startToolbar = True
+            onRestore(active)
         else:
             pass
 
     def onStart():
-        """
-        Detect default workbench toolbars visibility change.
-        """
-        for i in mw.findChildren(QtGui.QToolBar):
-            if i in startToolbars:
-                pass
-            else:
-                startToolbars.append(i)
-                i.visibilityChanged.connect(onVisibilityChanged)
+        """Start persistent toolbars."""
 
-    mw = Gui.getMainWindow()
-    mw.workbenchActivated.connect(onStart)
+        onWorkbenchActivated()
+        mw.workbenchActivated.connect(onWorkbenchActivated)
+
+    t.setSingleShot(True)
+    t.timeout.connect(onStart)
+    t.start()
+
 
 persistentToolbars()
