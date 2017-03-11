@@ -105,7 +105,6 @@ def persistentToolbars():
                     mw.addToolBarBreak(QtCore.Qt.TopToolBarArea)
                 elif i in toolbars:
                     mw.addToolBar(QtCore.Qt.TopToolBarArea, toolbars[i])
-                    del toolbars[i]
                 else:
                     pass
 
@@ -114,7 +113,6 @@ def persistentToolbars():
                     mw.addToolBarBreak(QtCore.Qt.LeftToolBarArea)
                 elif i in toolbars:
                     mw.addToolBar(QtCore.Qt.LeftToolBarArea, toolbars[i])
-                    del toolbars[i]
                 else:
                     pass
 
@@ -123,7 +121,6 @@ def persistentToolbars():
                     mw.addToolBarBreak(QtCore.Qt.RightToolBarArea)
                 elif i in toolbars:
                     mw.addToolBar(QtCore.Qt.RightToolBarArea, toolbars[i])
-                    del toolbars[i]
                 else:
                     pass
 
@@ -132,7 +129,6 @@ def persistentToolbars():
                     mw.addToolBarBreak(QtCore.Qt.BottomToolBarArea)
                 elif i in toolbars:
                     mw.addToolBar(QtCore.Qt.BottomToolBarArea, toolbars[i])
-                    del toolbars[i]
                 else:
                     pass
         else:
@@ -240,4 +236,10 @@ def persistentToolbars():
     t.start()
 
 
-persistentToolbars()
+try:
+    if FreeCAD.Version()[1] <= "16":
+        persistentToolbars()
+    else:
+        pass
+except:
+    pass
