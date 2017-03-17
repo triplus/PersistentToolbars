@@ -1,5 +1,5 @@
-# PersistentToolbars
-Persistent toolbars support for FreeCAD
+# Persistent toolbars (FreeCAD 0.16)
+**Note: Starting with FreeCAD 0.17 persistent toolbars is part of the default FreeCAD experience.**
 
 ### Installation:
 
